@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# edie, the ipns site pin manager
+# written by vane vander <https://letsdecentralize.org>
+# licensed under gplv3-only
+
+VERSION=20220720
+
+while getopts 'lud:a:v:h' OPTION; do
+	case "$OPTION" in
+		l)
+			for OUTPUT in $(cat $HOME/.edie/urls)
+			do
+				echo $OUTPUT
+				echo -n "CID: "
+				timeout 10s ipfs name resolve $OUTPUT || echo "DNSLink name lookup timed out."
+				echo -n "Size: "
+				ipfs name resolve $OUTPUT | xargs ipfs object stat | grep CumulativeSize | sed -e 's/CumulativeSize: //g' | xargs numfmt --to=iec-i --suffix=B
+				echo ""
+			done
+			;;
+		u)
+			for OUTPUT in $(cat $HOME/.edie/urls)
+			do
+				echo "Now updating" $OUTPUT
+				echo $OUTPUT | xargs timeout 1m ipfs name resolve | xargs ipfs pin add -r || echo "Pinning timed out."
+				echo ""
+			done
+			;;
+		d)
+			cat $HOME/.edie/urls | grep -v $OPTARG > /tmp/urls && mv /tmp/urls $HOME/.edie/urls
+			ipfs name resolve $OPTARG | xargs ipfs pin rm
+			ipfs repo gc
+			;;
+		a)
+			mkdir -p $HOME/.edie/
+			echo $OPTARG >> $HOME/.edie/urls
+			ipfs name resolve $OPTARG | xargs ipfs pin add -r
+			;;
+		v)
+			echo $OPTARG
+			echo -n "CID: "
+			timeout 10s ipfs name resolve $OPTARG || echo "DNSLink name lookup timed out."
+			echo -n "Size: "
+			ipfs name resolve $OPTARG | xargs ipfs object stat | grep CumulativeSize | sed -e 's/CumulativeSize: //g' | xargs numfmt --to=iec-i --suffix=B
+			;;
+		h)
+			echo -n "edie v."
+			echo $VERSION
+			echo "-l: list all pinned sites"
+			echo "-u: update all pinned sites"
+			echo "-d: unpin a site and delete it from storage"
+			echo "-a: pin a site and add it to storage"
+			echo "-v: show detailed info about a pinned site"
+			echo "-h: display this help"
+			;;
+	esac
+done
