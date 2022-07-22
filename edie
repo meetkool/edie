@@ -4,9 +4,9 @@
 # written by vane vander <https://letsdecentralize.org>
 # licensed under gplv3-only
 
-VERSION=20220720
+VERSION=20220722
 
-while getopts 'lud:a:v:h' OPTION; do
+while getopts 'lud:a:v:hci:k:' OPTION; do
 	case "$OPTION" in
 		l)
 			for OUTPUT in $(cat $HOME/.edie/urls)
@@ -34,8 +34,12 @@ while getopts 'lud:a:v:h' OPTION; do
 			;;
 		a)
 			mkdir -p $HOME/.edie/
-			echo $OPTARG >> $HOME/.edie/urls
+			if [[ $OPTARG == *"bafy"* ]]; then
+				echo "CIDv1 (hashes starting with 'bafy') not supported at this time."
+				exit 1
+			fi
 			ipfs name resolve $OPTARG | xargs ipfs pin add -r
+			echo $OPTARG >> $HOME/.edie/urls
 			;;
 		v)
 			echo $OPTARG
@@ -44,14 +48,51 @@ while getopts 'lud:a:v:h' OPTION; do
 			echo -n "Size: "
 			ipfs name resolve $OPTARG | xargs ipfs object stat | grep CumulativeSize | sed -e 's/CumulativeSize: //g' | xargs numfmt --to=iec-i --suffix=B
 			;;
+		c)
+			echo -n "Nickname for site (no spaces): "
+			read sitename
+			mkdir -p $HOME/.edie/sites/
+			echo $sitename >> $HOME/.edie/sites/$sitename.txt
+			ipfs key gen --type=rsa --size=2048 $sitename >> $HOME/.edie/sites/$sitename.txt
+			ipfs key export $sitename -o $HOME/.edie/sites/$sitename.key
+			echo -n "Full path to site files (no spaces): "
+			read sitepath
+			echo $sitepath >> $HOME/.edie/sites/$sitename.txt
+			TEMPHASH=$(ipfs add -r $sitepath | tail -1 | awk '/Qm/' RS=" ")
+			echo "This next step may take a while depending on the size of the site. Hang tight!"
+			ipfs name publish --key=$sitename $TEMPHASH
+			echo "Site created."
+			echo "Keys and config backed up in ~/.edie/sites/"
+			;;
+		i)
+			echo -n "Site name: "
+			sed -n '1p' $HOME/.edie/sites/$OPTARG.txt
+			echo -n "IPNS hash: /ipns/"
+			sed -n '2p' $HOME/.edie/sites/$OPTARG.txt
+			echo -n "Local path to site files: "
+			sed -n '3p' $HOME/.edie/sites/$OPTARG.txt
+			;;
+		k)
+			echo -n "Updating "
+			echo $OPTARG
+			TEMPHASH=$(sed -n '3p' $HOME/.edie/sites/$OPTARG.txt | xargs ipfs add -r | tail -1 | awk '/Qm/' RS=" ")
+			echo "This next step may take a while depending on the size of the site. Hang tight!"
+			ipfs name publish --key=$OPTARG $TEMPHASH
+			echo "Site updated."
+			;;
 		h)
 			echo -n "edie v."
 			echo $VERSION
-			echo "-l: list all pinned sites"
-			echo "-u: update all pinned sites"
-			echo "-d: unpin a site and delete it from storage"
-			echo "-a: pin a site and add it to storage"
-			echo "-v: show detailed info about a pinned site"
+			echo "for creating sites:"
+			echo "  -c: create a new site (in interactive mode)"
+			echo "  -i: display info about a created site"
+			echo "  -k: update a site"
+			echo "for managing pinned sites:"
+			echo "  -l: list all pinned sites"
+			echo "  -u: update all pinned sites"
+			echo "  -d: unpin a site and delete it from storage"
+			echo "  -a: pin a site and add it to storage"
+			echo "  -v: show detailed info about a pinned site"
 			echo "-h: display this help"
 			;;
 	esac

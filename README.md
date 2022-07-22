@@ -1,10 +1,8 @@
 # Edie, the IPNS site pin manager
 
-Edie is a simple Bash script to help pin and manage seeded sites hosted over IPNS, similar to Freenet's bookmark feature. It reads from a file (at `$HOME/.edie/urls`) with a list of domains set up to use DNSLink and can fetch newer versions of the underlying IPNS hash, as well as clean up old files when removing a site.
+Edie is a simple Bash script to help pin and manage seeded sites hosted over IPNS, similar to Freenet's bookmark feature. It reads from a file (at `$HOME/.edie/urls`) with a list of raw peer hashes or domains set up to use DNSLink and can fetch newer versions of the underlying IPNS hash, as well as clean up old files when removing a site.
 
-Please note that it does not yet have functionality for *creating* a new IPNS site.
-
-Support for pinning IPNS sites without a domain (eg. /ipns/bafybeibt6ozbpel3rne5obfsofvwep6wefx7iangfpjgqh3fsbdapbm43i) will be added in a future release.
+Edie currently does not support pinning IPNS sites using CIDv1 (hashes starting with 'bafy').
 
 Edie does not run in the background. For auto-updates like in ZeroNet and Freenet, you must edit your own crontab to periodically call `edie -u`.
 
@@ -20,13 +18,56 @@ Edie does not run in the background. For auto-updates like in ZeroNet and Freene
 
 ## Examples
 
-### Add a new site
+### Creating your own site
+
+#### Creating a new site (interactive mode only for now)
+
+Input: `edie -c`
+
+Output:
+```
+Nickname for site (no spaces): EdieTest
+Full path to site files (no spaces): /var/www/misc/
+ 19.81 MiB / 19.81 MiB [============================] 100.00%
+This next step may take a while depending on the size of the site. Hang tight!
+Published to k2k4r8lzp5lprvvepogfviahclcb5cuau5afgk16zp89l8rfz7w8w5a8: /ipfs/QmdzZfoxk5KPje8qLUKpPPghyhrySzsDAw4SRJXdMWH2qD
+Site created.
+Keys and config backed up in ~/.edie/sites/
+```
+
+#### List info about a created site
+
+Input: `edie -i EdieTest`
+
+Output:
+```
+Site name: EdieTest
+IPNS hash: /ipns/k2k4r8lzp5lprvvepogfviahclcb5cuau5afgk16zp89l8rfz7w8w5a8
+Local path to site files: /var/www/misc/
+```
+
+#### Update a site
+
+Input: `edie -k EdieTest`
+
+Output:
+```
+Updating EdieTest
+ 19.81 MiB / 19.81 MiB [============================] 100.00%
+This next step may take a while depending on the size of the site. Hang tight!
+Published to k2k4r8lzp5lprvvepogfviahclcb5cuau5afgk16zp89l8rfz7w8w5a8: /ipfs/QmdzZfoxk5KPje8qLUKpPPghyhrySzsDAw4SRJXdMWH2qD
+Site updated.
+```
+
+### Managing pinned sites from other people
+
+#### Add a new site to your storage
 
 Input: `edie -a shimmy1996.com`
 
 Output: `pinned QmXdHCZYM9oh2ZcGQD4aYFrTGNXygaGXqEiUSQWvFqu1GL recursively`
 
-### List info about a pinned site
+#### List info about a pinned site
 
 Input: `edie -v shimmy1996.com`
 
@@ -39,7 +80,7 @@ Size: 391MiB
 
 Please note that the size may actually be smaller than outputted due to deduplication or compression.
 
-### Update all pinned sites
+#### Update all pinned sites
 
 Input: `edie -u`
 
@@ -63,12 +104,17 @@ Input: `edie -h`
 
 Output:
 ```
-edie v.20220720
--l: list all pinned sites
--u: update all pinned sites
--d: unpin a site and delete it from storage
--a: pin a site and add it to storage
--v: show detailed info about a pinned site
+edie v.20220722
+for creating sites:
+  -c: create a new site (in interactive mode)
+  -i: display info about a created site
+  -k: update a site
+for managing pinned sites:
+  -l: list all pinned sites
+  -u: update all pinned sites
+  -d: unpin a site and delete it from storage
+  -a: pin a site and add it to storage
+  -v: show detailed info about a pinned site
 -h: display this help
 ```
 
