@@ -104,7 +104,7 @@ Input: `edie -h`
 
 Output:
 ```
-edie v.20220722
+edie v.20220723
 for creating sites:
   -c: create a new site (in interactive mode)
   -i: display info about a created site

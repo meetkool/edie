@@ -4,7 +4,7 @@
 # written by vane vander <https://letsdecentralize.org>
 # licensed under gplv3-only
 
-VERSION=20220722
+VERSION=20220723
 
 while getopts 'lud:a:v:hci:k:' OPTION; do
 	case "$OPTION" in
@@ -28,9 +28,13 @@ while getopts 'lud:a:v:hci:k:' OPTION; do
 			done
 			;;
 		d)
-			cat $HOME/.edie/urls | grep -v $OPTARG > /tmp/urls && mv /tmp/urls $HOME/.edie/urls
-			ipfs name resolve $OPTARG | xargs ipfs pin rm
-			ipfs repo gc
+			if cat $HOME/.edie/urls | grep $OPTARG
+			then
+				cat $HOME/.edie/urls | grep -v $OPTARG > /tmp/urls && mv /tmp/urls $HOME/.edie/urls
+				ipfs name resolve $OPTARG | xargs ipfs pin rm
+				ipfs repo gc
+			else echo "Not found in ~/.edie/urls"
+			fi
 			;;
 		a)
 			mkdir -p $HOME/.edie/
@@ -38,8 +42,10 @@ while getopts 'lud:a:v:hci:k:' OPTION; do
 				echo "CIDv1 (hashes starting with 'bafy') not supported at this time."
 				exit 1
 			fi
-			ipfs name resolve $OPTARG | xargs ipfs pin add -r
-			echo $OPTARG >> $HOME/.edie/urls
+			if cat $HOME/.edie/urls | grep $OPTARG > /dev/null
+			then echo "You've already pinned this site."
+			else ipfs name resolve $OPTARG | xargs ipfs pin add -r && echo $OPTARG >> $HOME/.edie/urls
+			fi
 			;;
 		v)
 			echo $OPTARG
@@ -77,8 +83,10 @@ while getopts 'lud:a:v:hci:k:' OPTION; do
 			echo $OPTARG
 			TEMPHASH=$(sed -n '3p' $HOME/.edie/sites/$OPTARG.txt | xargs ipfs add -r | tail -1 | awk '/Qm/' RS=" ")
 			echo "This next step may take a while depending on the size of the site. Hang tight!"
-			ipfs name publish --key=$OPTARG $TEMPHASH
-			echo "Site updated."
+			if ipfs name publish --key=$OPTARG $TEMPHASH
+			then echo "Site updated."
+			else echo "Something went wrong. File an issue at https://codeberg.org/lethe/edie/"
+			fi
 			;;
 		h)
 			echo -n "edie v."
