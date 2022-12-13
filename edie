@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # edie, the ipns site pin manager
-# written by vane vander <https://letsdecentralize.org>
+# written by nardcart 
+# produied by vane vander <https://letsdecentralize.org>
 # licensed under gplv3-only
 
 VERSION=20220723
